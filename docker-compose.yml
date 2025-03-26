@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-net
+
+  django:
+    build:
+      context: ./djangotutorial
+      dockerfile: dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./djangotutorial:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/mydatabase
+    depends_on:
+      - db
+    networks:
+      - app-net
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: dockerfile
+    ports:
+      - "8050:8050"
+    environment:
+      DJANGO_API_URL: "http://django:8000/api/hardware/"
+    depends_on:
+      - django
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
